@@ -1,0 +1,6 @@
+framework module Pods_swift_blockchainUITests {
+  umbrella header "Pods-swift-blockchainUITests-umbrella.h"
+
+  export *
+  module * { export * }
+}

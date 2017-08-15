@@ -7,11 +7,15 @@
 //
 
 import Foundation
+import CryptoSwift
+import Starscream
 
 open class BlockchainService
 {
     
-    var blockchain: [Block]?
+    public var blockchain: [Block]?
+    
+    fileprivate var sockets = [WebSocket]()
     
     init()
     {
@@ -21,7 +25,8 @@ open class BlockchainService
     
     func calculateHash(index: Int, previousHash: String, timestamp: Int, data: String) -> String
     {
-        return ""
+        let hash = (String(index) + previousHash + String(timestamp) + data).sha256()
+        return hash
     }
     
     func calculateHashForBlock(block: Block) -> String
@@ -69,7 +74,7 @@ open class BlockchainService
     
     func getGenesisBlock() -> Block
     {
-        return Block(index: 0, previousHash: "0", timestamp: 1465154705, data: "Genesis Block",hash: "816534932c2b7154836da6afc367695e6337db8a921823784c14378abed4f7d7")
+        return Block(index: 0, previousHash: "0", timestamp: 1465154705, data: "Genesis Block", hash: "816534932c2b7154836da6afc367695e6337db8a921823784c14378abed4f7d7")
     }
     
     func isValidNewBlock(newBlock: Block, previousBlock: Block) -> Bool
@@ -139,5 +144,49 @@ open class BlockchainService
         {
             print("Received blockchain is invalid")
         }
+    }
+}
+
+extension BlockchainService: WebSocketDelegate
+{
+    
+    public func websocketDidConnect(socket: WebSocket)
+    {
+        self.initConnection(socket)
+    }
+    
+    public func websocketDidDisconnect(socket: WebSocket, error: NSError?)
+    {
+        print("websocket is disconnected: \(String(describing: error?.localizedDescription))")
+    }
+    
+    func connectToPeers(newPeers: [URL])
+    {
+        newPeers.forEach
+        {
+            (peer) in
+            
+            let ws = WebSocket(url: peer)
+            ws.delegate = self
+            ws.connect()
+        }
+    }
+    
+    var initConnection = (ws) => {
+        sockets.push(ws);
+        initMessageHandler(ws);
+        initErrorHandler(ws);
+        write(ws, queryChainLengthMsg());
+    };
+    
+    func initConnection(socket: WebSocket)
+    {
+        self.sockets.append(socket)
+        self.initMessageHandler(sockets)
+    }
+    
+    private func initHttpServer()
+    {
+        
     }
 }
